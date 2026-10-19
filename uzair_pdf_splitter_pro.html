@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uzair PDF Splitter Pro - Fast, Private & Secure</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- PDF.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  
+  <!-- pdf-lib CDN -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+  <!-- JSZip CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    /* Selection Ring for Page Cards */
+    .page-card.selected {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px #3b82f6;
+    }
+  </style>
+</head>
+<body class="min-h-full flex flex-col justify-between bg-slate-900 text-slate-100 antialiased">
+
+  <!-- Navigation / Header -->
+  <header class="border-b border-slate-800 bg-slate-950/60 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="bg-brand-600 text-white p-2 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-file-pdf text-xl"></i>
+        </div>
+        <span class="font-bold text-lg tracking-tight text-white">Uzair <span class="text-brand-500">PDF Splitter Pro</span></span>
+      </div>
+      
+      <!-- Privacy Badge -->
+      <div class="flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-full text-xs font-medium">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>100% Client-Side Private</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+    <!-- Upload Section (Shown when no PDF loaded) -->
+    <div id="uploadSection" class="max-w-3xl mx-auto">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3">
+          Split PDFs Instantly in Your Browser
+        </h1>
+        <p class="text-slate-400 text-sm sm:text-base max-w-xl mx-auto">
+          Fast, free, and completely secure. Files never leave your device, ensuring maximum privacy for confidential documents.
+        </p>
+      </div>
+
+      <!-- Drag & Drop Zone -->
+      <div 
+        id="dropZone"
+        class="border-2 border-dashed border-slate-700 hover:border-brand-500 bg-slate-800/40 hover:bg-slate-800/80 transition-all rounded-2xl p-10 sm:p-14 text-center cursor-pointer relative group flex flex-col items-center justify-center gap-4 shadow-xl"
+      >
+        <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden">
+        
+        <div class="w-16 h-16 bg-slate-800 border border-slate-700 group-hover:border-brand-500 group-hover:scale-110 transition-all rounded-full flex items-center justify-center text-brand-500 shadow-inner">
+          <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+        </div>
+
+        <div>
+          <p class="text-lg font-semibold text-white mb-1">
+            Drag & Drop your PDF here, or <span class="text-brand-500 hover:underline">browse</span>
+          </p>
+          <p class="text-xs text-slate-400">Supports files up to standard browser memory limit</p>
+        </div>
+
+        <!-- Privacy reassurance banner -->
+        <div class="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400 bg-slate-900/60 px-4 py-2 rounded-lg border border-slate-800">
+          <i class="fa-solid fa-lock text-emerald-400"></i>
+          <span>Your document stays safely on your machine. No uploads, no servers.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workspace Section (Hidden by default, shown after loading PDF) -->
+    <div id="workspaceSection" class="hidden flex flex-col gap-6">
+      
+      <!-- Top Bar: Document Info & Quick Actions -->
+      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg">
+        <div class="flex items-center gap-4 overflow-hidden w-full md:w-auto">
+          <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 text-brand-500 flex-shrink-0">
+            <i class="fa-solid fa-file-pdf text-2xl"></i>
+          </div>
+          <div class="truncate">
+            <h2 id="docName" class="font-bold text-white text-base sm:text-lg truncate">document.pdf</h2>
+            <div class="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
+              <span id="docSize">0 MB</span>
+              <span>•</span>
+              <span id="docPages">0 Pages</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reset / Select Different PDF Button -->
+        <button 
+          id="btnReset" 
+          class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium rounded-xl transition flex items-center gap-2 self-end md:self-auto flex-shrink-0"
+        >
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>Choose Another File</span>
+        </button>
+      </div>
+
+      <!-- Split Settings Panel & Preview Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Options Sidebar -->
+        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 flex flex-col gap-5 h-fit shadow-lg">
+          <h3 class="font-bold text-white text-base flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-brand-500"></i>
+            <span>Split Settings</span>
+          </h3>
+
+          <!-- Mode Selector Tabs -->
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Choose Split Mode</label>
+            <div class="grid grid-cols-1 gap-2">
+              <label class="flex items-start gap-3 p-3 bg-slate-900/60 border border-slate-700/60 rounded-xl cursor-pointer hover:border-brand-500/50 transition">
+                <input type="radio" name="splitMode" value="selected" checked class="mt-1 text-brand-600 focus:ring-brand-500">
+                <div>
+                  <div class="text-sm font-semibold text-white">Extract Selected Pages</div>
+                  <div class="text-xs text-slate-400">Merges chosen pages into a single new PDF document</div>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-3 p-3 bg-slate-900/60 border border-slate-700/60 rounded-xl cursor-pointer hover:border-brand-500/50 transition">
+                <input type="radio" name="splitMode" value="range" class="mt-1 text-brand-600 focus:ring-brand-500">
+                <div>
+                  <div class="text-sm font-semibold text-white">Custom Page Ranges</div>
+                  <div class="text-xs text-slate-400">Specify ranges (e.g., 1-3, 5, 8-10) into one PDF</div>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-3 p-3 bg-slate-900/60 border border-slate-700/60 rounded-xl cursor-pointer hover:border-brand-500/50 transition">
+                <input type="radio" name="splitMode" value="every" class="mt-1 text-brand-600 focus:ring-brand-500">
+                <div>
+                  <div class="text-sm font-semibold text-white">Split Every Page</div>
+                  <div class="text-xs text-slate-400">Downloads each page as a distinct file (in a .ZIP)</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Dynamic Mode Options -->
+
+          <!-- Mode: Range Input (Visible when 'range' mode is active) -->
+          <div id="rangeOptionGroup" class="hidden flex flex-col gap-2">
+            <label for="rangeInput" class="text-xs font-semibold text-slate-400">Page Range Syntax:</label>
+            <input 
+              type="text" 
+              id="rangeInput" 
+              placeholder="e.g. 1-3, 5, 7-10" 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
+            >
+            <p class="text-xs text-slate-400">Use commas for individual pages and hyphens for ranges.</p>
+          </div>
+
+          <!-- Mode: Selection Helper Buttons (Visible when 'selected' mode is active) -->
+          <div id="selectOptionGroup" class="flex flex-col gap-2">
+            <label class="text-xs font-semibold text-slate-400">Quick Selection:</label>
+            <div class="flex gap-2">
+              <button id="btnSelectAll" class="flex-1 py-1.5 px-3 bg-slate-700 hover:bg-slate-600 text-xs font-medium rounded-lg transition text-slate-200">
+                Select All
+              </button>
+              <button id="btnDeselectAll" class="flex-1 py-1.5 px-3 bg-slate-700 hover:bg-slate-600 text-xs font-medium rounded-lg transition text-slate-200">
+                Deselect All
+              </button>
+            </div>
+          </div>
+
+          <!-- Action Button -->
+          <button 
+            id="btnProcessPdf" 
+            class="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-xl transition shadow-lg shadow-brand-600/30 flex items-center justify-center gap-2 mt-2"
+          >
+            <i class="fa-solid fa-scissors"></i>
+            <span>Process & Download PDF</span>
+          </button>
+        </div>
+
+        <!-- Right: Page Thumbnails Grid -->
+        <div class="lg:col-span-2 bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 flex flex-col gap-4 shadow-lg min-h-[400px]">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-base flex items-center gap-2">
+              <i class="fa-solid fa-border-all text-brand-500"></i>
+              <span>Page Selection Grid</span>
+            </h3>
+            <span id="selectedCountBadge" class="text-xs font-medium bg-brand-500/10 text-brand-400 px-2.5 py-1 rounded-full border border-brand-500/20">
+              0 pages selected
+            </span>
+          </div>
+
+          <!-- Thumbnail Render Area -->
+          <div id="pagesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto max-h-[600px] p-2 bg-slate-900/50 rounded-xl border border-slate-800">
+            <!-- Dynamically populated page cards -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Progress Modal / Overlay -->
+  <div id="progressModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 max-w-sm w-full flex flex-col items-center gap-4 shadow-2xl text-center">
+      <div class="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+      <div>
+        <h4 id="progressTitle" class="text-lg font-bold text-white mb-1">Processing Document...</h4>
+        <p id="progressStatus" class="text-xs text-slate-400">Rendering page thumbnails...</p>
+      </div>
+      <!-- Progress Bar Container -->
+      <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700">
+        <div id="progressBar" class="bg-brand-500 h-full w-0 transition-all duration-200"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+      <i id="toastIcon" class="fa-solid fa-circle-info text-brand-500"></i>
+      <span id="toastMessage" class="text-sm font-medium">Notification message</span>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 py-6 bg-slate-950/40 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>© Uzair PDF Splitter Pro — Private & Client-side PDF Utility.</p>
+      <div class="flex items-center gap-4">
+        <span><i class="fa-solid fa-lock text-emerald-400 mr-1"></i> Client-Side Processing</span>
+        <span><i class="fa-solid fa-bolt text-yellow-400 mr-1"></i> Zero Server Uploads</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    // Configure PDF.js Worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // Application State Variables
+    let currentPdfArrayBuffer = null;
+    let pdfJsDoc = null;
+    let pdfLibDoc = null;
+    let totalPages = 0;
+    let selectedPages = new Set(); // Stores 1-indexed page numbers
+    let pdfFileName = 'document.pdf';
+
+    // DOM Element References
+    const uploadSection = document.getElementById('uploadSection');
+    const workspaceSection = document.getElementById('workspaceSection');
+    const dropZone = document.getElementById('dropZone');
+    const pdfFileInput = document.getElementById('pdfFileInput');
+    const btnReset = document.getElementById('btnReset');
+    const docName = document.getElementById('docName');
+    const docSize = document.getElementById('docSize');
+    const docPages = document.getElementById('docPages');
+    const pagesGrid = document.getElementById('pagesGrid');
+    const selectedCountBadge = document.getElementById('selectedCountBadge');
+    const btnSelectAll = document.getElementById('btnSelectAll');
+    const btnDeselectAll = document.getElementById('btnDeselectAll');
+    const btnProcessPdf = document.getElementById('btnProcessPdf');
+    const rangeOptionGroup = document.getElementById('rangeOptionGroup');
+    const selectOptionGroup = document.getElementById('selectOptionGroup');
+    const rangeInput = document.getElementById('rangeInput');
+    const progressModal = document.getElementById('progressModal');
+    const progressTitle = document.getElementById('progressTitle');
+    const progressStatus = document.getElementById('progressStatus');
+    const progressBar = document.getElementById('progressBar');
+
+    // Drag & Drop Event Listeners
+    dropZone.addEventListener('click', () => pdfFileInput.click());
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-brand-500', 'bg-slate-800');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-brand-500', 'bg-slate-800');
+      }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        handleFileSelect(files[0]);
+      } else {
+        showToast('Please select a valid PDF file.', 'error');
+      }
+    });
+
+    pdfFileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+
+    btnReset.addEventListener('click', resetWorkspace);
+
+    // Mode Toggle Event Listeners
+    document.querySelectorAll('input[name="splitMode"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const mode = e.target.value;
+        if (mode === 'range') {
+          rangeOptionGroup.classList.remove('hidden');
+          selectOptionGroup.classList.add('hidden');
+        } else if (mode === 'selected') {
+          rangeOptionGroup.classList.add('hidden');
+          selectOptionGroup.classList.remove('hidden');
+        } else {
+          rangeOptionGroup.classList.add('hidden');
+          selectOptionGroup.classList.add('hidden');
+        }
+      });
+    });
+
+    btnSelectAll.addEventListener('click', () => {
+      for (let i = 1; i <= totalPages; i++) {
+        selectedPages.add(i);
+      }
+      updateGridSelectionVisuals();
+    });
+
+    btnDeselectAll.addEventListener('click', () => {
+      selectedPages.clear();
+      updateGridSelectionVisuals();
+    });
+
+    // File Selection Handler
+    async function handleFileSelect(file) {
+      if (file.type !== 'application/pdf') {
+        showToast('Only PDF files are supported.', 'error');
+        return;
+      }
+
+      pdfFileName = file.name;
+      docName.textContent = file.name;
+      docSize.textContent = formatBytes(file.size);
+
+      showProgress('Loading PDF...', 'Reading file buffer...', 10);
+
+      try {
+        currentPdfArrayBuffer = await file.arrayBuffer();
+        
+        // Pass a sliced copy of ArrayBuffer to PDF.js to avoid buffer detachment issues
+        const pdfJsBuffer = currentPdfArrayBuffer.slice(0);
+        const loadingTask = pdfjsLib.getDocument({ data: pdfJsBuffer });
+        pdfJsDoc = await loadingTask.promise;
+        totalPages = pdfJsDoc.numPages;
+        
+        // Load with pdf-lib using the intact buffer
+        pdfLibDoc = await PDFLib.PDFDocument.load(currentPdfArrayBuffer);
+
+        docPages.textContent = `${totalPages} Page${totalPages > 1 ? 's' : ''}`;
+
+        // Select all pages by default
+        selectedPages.clear();
+        for (let i = 1; i <= totalPages; i++) {
+          selectedPages.add(i);
+        }
+
+        // Show Workspace UI
+        uploadSection.classList.add('hidden');
+        workspaceSection.classList.remove('hidden');
+
+        // Render Page Thumbnails
+        await renderThumbnails();
+        hideProgress();
+        showToast('PDF loaded successfully!');
+
+      } catch (err) {
+        console.error(err);
+        hideProgress();
+        showToast('Failed to load PDF file.', 'error');
+      }
+    }
+
+    // Render Thumbnails into Page Grid
+    async function renderThumbnails() {
+      pagesGrid.innerHTML = '';
+      showProgress('Generating Thumbnails...', `Rendering page 1 of ${totalPages}`, 20);
+
+      for (let i = 1; i <= totalPages; i++) {
+        const page = await pdfJsDoc.getPage(i);
+        const viewport = page.getViewport({ scale: 0.3 });
+
+        // Outer Page Card
+        const card = document.createElement('div');
+        card.className = `page-card relative bg-slate-800 border border-slate-700/80 rounded-xl p-2 cursor-pointer transition flex flex-col items-center justify-between group hover:border-brand-500/70 ${selectedPages.has(i) ? 'selected' : ''}`;
+        card.dataset.pageNum = i;
+
+        // Checkbox Badge
+        const badge = document.createElement('div');
+        badge.className = `absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition ${selectedPages.has(i) ? 'bg-brand-500 text-white' : 'bg-slate-900/80 text-slate-400 border border-slate-700'}`;
+        badge.innerHTML = selectedPages.has(i) ? '<i class="fa-solid fa-check"></i>' : i;
+
+        // Canvas element for page preview
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        canvas.className = 'rounded border border-slate-700/50 max-w-full h-auto shadow';
+
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport
+        };
+        await page.render(renderContext).promise;
+
+        // Footer label inside card
+        const label = document.createElement('span');
+        label.className = 'mt-2 text-xs text-slate-400 font-medium';
+        label.textContent = `Page ${i}`;
+
+        card.appendChild(badge);
+        card.appendChild(canvas);
+        card.appendChild(label);
+
+        // Click handler to toggle selection
+        card.addEventListener('click', () => {
+          if (selectedPages.has(i)) {
+            selectedPages.delete(i);
+          } else {
+            selectedPages.add(i);
+          }
+          updateGridSelectionVisuals();
+        });
+
+        pagesGrid.appendChild(card);
+
+        // Update progress bar
+        const percent = Math.round(20 + (i / totalPages) * 75);
+        updateProgress(`Rendering page ${i} of ${totalPages}`, percent);
+      }
+
+      updateSelectedCountBadge();
+    }
+
+    // Synchronize UI visuals with selectedPages state
+    function updateGridSelectionVisuals() {
+      const cards = pagesGrid.querySelectorAll('.page-card');
+      cards.forEach(card => {
+        const pageNum = parseInt(card.dataset.pageNum, 10);
+        const badge = card.querySelector('div');
+        
+        if (selectedPages.has(pageNum)) {
+          card.classList.add('selected');
+          badge.className = 'absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition bg-brand-500 text-white';
+          badge.innerHTML = '<i class="fa-solid fa-check"></i>';
+        } else {
+          card.classList.remove('selected');
+          badge.className = 'absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition bg-slate-900/80 text-slate-400 border border-slate-700';
+          badge.textContent = pageNum;
+        }
+      });
+
+      updateSelectedCountBadge();
+    }
+
+    function updateSelectedCountBadge() {
+      selectedCountBadge.textContent = `${selectedPages.size} of ${totalPages} pages selected`;
+    }
+
+    // Process PDF Action Handler
+    btnProcessPdf.addEventListener('click', async () => {
+      const mode = document.querySelector('input[name="splitMode"]:checked').value;
+
+      if (mode === 'selected') {
+        if (selectedPages.size === 0) {
+          showToast('Please select at least one page to extract.', 'error');
+          return;
+        }
+        await extractPages(Array.from(selectedPages).sort((a, b) => a - b));
+
+      } else if (mode === 'range') {
+        const rangeStr = rangeInput.value.trim();
+        if (!rangeStr) {
+          showToast('Please enter a valid page range string.', 'error');
+          return;
+        }
+        const pagesToExtract = parsePageRanges(rangeStr, totalPages);
+        if (pagesToExtract.length === 0) {
+          showToast('Invalid page ranges provided.', 'error');
+          return;
+        }
+        await extractPages(pagesToExtract);
+
+      } else if (mode === 'every') {
+        await splitEveryPageZip();
+      }
+    });
+
+    // Helper: Extract specified pages into a single PDF
+    async function extractPages(pagesArray) {
+      showProgress('Creating New PDF...', 'Copying pages into document...', 30);
+
+      try {
+        const newPdfDoc = await PDFLib.PDFDocument.create();
+        
+        // Zero-index conversion for pdf-lib
+        const pageIndexes = pagesArray.map(p => p - 1);
+        
+        const copiedPages = await newPdfDoc.copyPages(pdfLibDoc, pageIndexes);
+        copiedPages.forEach(page => newPdfDoc.addPage(page));
+
+        updateProgress('Saving generated PDF file...', 80);
+        const pdfBytes = await newPdfDoc.save();
+
+        // Download
+        const baseName = pdfFileName.replace(/\.[^/.]+$/, '');
+        const outputFilename = `${baseName}_split.pdf`;
+        downloadBlob(pdfBytes, outputFilename, 'application/pdf');
+
+        hideProgress();
+        showToast('PDF processed and download started!');
+      } catch (err) {
+        console.error(err);
+        hideProgress();
+        showToast('Error occurred while splitting PDF.', 'error');
+      }
+    }
+
+    // Helper: Split every single page into an individual file bundled inside a ZIP
+    async function splitEveryPageZip() {
+      showProgress('Splitting Pages...', 'Initializing ZIP archive...', 10);
+
+      try {
+        const zip = new JSZip();
+        const baseName = pdfFileName.replace(/\.[^/.]+$/, '');
+
+        for (let i = 1; i <= totalPages; i++) {
+          updateProgress(`Processing page ${i} of ${totalPages}...`, Math.round((i / totalPages) * 80));
+          
+          const singlePageDoc = await PDFLib.PDFDocument.create();
+          const [copiedPage] = await singlePageDoc.copyPages(pdfLibDoc, [i - 1]);
+          singlePageDoc.addPage(copiedPage);
+
+          const pdfBytes = await singlePageDoc.save();
+          zip.file(`${baseName}_page_${i}.pdf`, pdfBytes);
+        }
+
+        updateProgress('Compressing ZIP package...', 90);
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+        downloadBlob(zipBlob, `${baseName}_all_pages.zip`, 'application/zip');
+        hideProgress();
+        showToast('ZIP file generated successfully!');
+
+      } catch (err) {
+        console.error(err);
+        hideProgress();
+        showToast('Failed to generate ZIP archive.', 'error');
+      }
+    }
+
+    // Parse range string e.g. "1-3, 5, 7-10"
+    function parsePageRanges(rangeStr, maxPage) {
+      const pages = new Set();
+      const parts = rangeStr.split(',');
+
+      for (let part of parts) {
+        part = part.trim();
+        if (!part) continue;
+
+        if (part.includes('-')) {
+          const [startStr, endStr] = part.split('-').map(s => s.trim());
+          const start = parseInt(startStr, 10);
+          const end = parseInt(endStr, 10);
+
+          if (!isNaN(start) && !isNaN(end) && start <= end) {
+            for (let i = start; i <= end; i++) {
+              if (i >= 1 && i <= maxPage) pages.add(i);
+            }
+          }
+        } else {
+          const pageNum = parseInt(part, 10);
+          if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= maxPage) {
+            pages.add(pageNum);
+          }
+        }
+      }
+
+      return Array.from(pages).sort((a, b) => a - b);
+    }
+
+    // Download Blob Utility
+    function downloadBlob(data, filename, type) {
+      const blob = data instanceof Blob ? data : new Blob([data], { type: type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    }
+
+    // Reset workspace back to upload screen
+    function resetWorkspace() {
+      currentPdfArrayBuffer = null;
+      pdfJsDoc = null;
+      pdfLibDoc = null;
+      totalPages = 0;
+      selectedPages.clear();
+      pdfFileInput.value = '';
+      pagesGrid.innerHTML = '';
+
+      workspaceSection.classList.add('hidden');
+      uploadSection.classList.remove('hidden');
+    }
+
+    // Progress Modal Control Helpers
+    function showProgress(title, status, percent) {
+      progressTitle.textContent = title;
+      progressStatus.textContent = status;
+      progressBar.style.width = `${percent}%`;
+      progressModal.classList.remove('hidden');
+    }
+
+    function updateProgress(status, percent) {
+      progressStatus.textContent = status;
+      progressBar.style.width = `${percent}%`;
+    }
+
+    function hideProgress() {
+      progressModal.classList.add('hidden');
+    }
+
+    // Toast Notification System
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMessage.textContent = message;
+      
+      if (type === 'error') {
+        toastIcon.className = 'fa-solid fa-circle-exclamation text-red-500';
+      } else {
+        toastIcon.className = 'fa-solid fa-circle-check text-brand-500';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+
+    // Format Byte Size Utility
+    function formatBytes(bytes, decimals = 2) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+  </script>
+</body>
+</html>
